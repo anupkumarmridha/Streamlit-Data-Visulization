@@ -92,6 +92,9 @@ if check_box:
     if feature_selection:
         fig=px.line(df, x=df.state, y=feature_selection, title="graph of States")
         st.plotly_chart(fig)
+        for feature in feature_selection:
+            figPie = px.pie(df, names='state', values=feature)
+            st.plotly_chart(figPie)
 
 
 feature_selection=st.sidebar.multiselect(label="feature to plot",
