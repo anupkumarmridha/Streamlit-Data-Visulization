@@ -1,16 +1,13 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 import matplotlib.pyplot as plt
-import seaborn as sns
 from pandas._libs.hashtable import value_count
 #title for web app 
 st.title("State's Data Analysis")
 
-@st.cache
+@st.cache_data 
 def load_data():
     #Function for load data
     df = pd.read_json("stateData.json")
@@ -85,11 +82,10 @@ if check_box:
     def autopct(pct): # only show the label when it's > 10%
         return ('%.2f' % pct)
 
-    # type_count=df['type'].value_counts()
-    # print(type_count)
-    # type_fig=type_count.plot(subplots=True,kind='pie',figsize=(28,12), autopct=autopct)
-    # plt.show(type_fig)
-    # st.pyplot(type_fig)
+    type_count = df['type'].value_counts()
+    type_fig, ax = plt.subplots()
+    type_count.plot.pie(ax=ax, figsize=(12, 6), autopct='%1.1f%%')
+    st.pyplot(type_fig)
 
     feature_selection=st.multiselect(label="Select fetures for compare all states",options=numeric_cols)
 
@@ -100,47 +96,39 @@ if check_box:
 
 feature_selection=st.sidebar.multiselect(label="feature to plot",
                                         options=numeric_cols)
-state_dropdown = st.sidebar.selectbox(label="states",
-                                      options=df.state)
 
-# mul_state_dropdown=st.sidebar.multiselect(label="Select Multiple States",options=df.state)
-# if mul_state_dropdown:
-#     if feature_selection:
-#         fig=px.line(df, x=df.state, y=feature_selection, title="graph of States")
-#         st.plotly_chart(fig)
+mul_state_dropdown=st.sidebar.multiselect(label="Select Multiple States",
+                                          options=df.state)
 
-# match state with dropdown state
-df = df[df['state']==state_dropdown]
+# Create a list of figure objects
+figures = []
 
-df_features = df[feature_selection]
+# Check if multiple states are selected in mul_state_dropdown
+if mul_state_dropdown:
+    filtered_df = df[df['state'].isin(mul_state_dropdown)]
 
-plotly_figure = px.bar(data_frame=df_features,
-                      x=df_features.index, y=feature_selection,
-                      title=(str(state_dropdown)))
+    if feature_selection:
+        # Generate a line chart for the selected states
+        fig1 = px.line(filtered_df, x='state', y=feature_selection, title="Comparison of States")
+        figures.append(fig1)
 
-# display plotly chart
-st.plotly_chart(plotly_figure)
+        # Generate a bar chart for the selected states
+        fig3 = px.bar(filtered_df, x='state', y=feature_selection, title="Comparison of States")
+        figures.append(fig3)
+        
+        # Create a separate DataFrame for the pie chart with both 'state' and the selected feature(s)
+        pie_data = filtered_df[['state'] + feature_selection]
+        
+        # Generate a pie chart for each selected feature
+        for feature in feature_selection:
+            figPie = px.pie(pie_data, names='state', values=feature)
+            figures.append(figPie)
 
+        
+# Display the figures
+for fig in figures:
+    st.plotly_chart(fig)
 
+#display a map
+st.map(states)
 
-#     'state':df.state,
-#     'population':df.population,
-#     'perCapitaIncome':df.perCapitaIncome
-# }
-# df=pd.DataFrame(state_population_income)
-# df=df.groupby('state')[['population','perCapitaIncome']].sum()
-# st.write(df)
-# st.bar_chart(df,height=500,width=1000)
-
-# st.subheader("States compare with Per capital Income")
-
-# state_option=df['state'].unique().tolist()
-# state=st.multiselect('Which state would you like to see?', state_option)
-
-# df=df[df['state'].isin(state)]
-
-# fig1=px.bar(df, x="state", y="perCapitaIncome", color="state", hover_name="state", range_y=[0,5])
-# fig1.update_layout(width=800)
-# st.write(fig1)
-
-# st.map(states)
